@@ -1,0 +1,455 @@
+//*********************************************************************
+// CODE FILENAME: 	Hanna-assn2-prog.cpp
+// DESCRIPTION: 	Takes two input files and creates doubly linked lists
+//					of odd and even numbers. Destroys
+// CLASS/TERM: 		CS 372 - Spring 1 2017
+// DESIGNER: 		Jonathan Patrick Hanna
+// FUNCTIONS:		void ProgramInformation
+//					void CheckParamFiles
+//					string EnterInputFile					
+//					dLList InitializeList
+//					bool EmptyList
+//					dLLNode NumInList
+//					bool OrderedListInsertion
+//					int ListLength
+//					int PositionLength
+//					void DisplayList
+//					void DestroyList
+//*********************************************************************
+
+#include <iostream>
+#include <iomanip>
+#include <cstdlib>
+#include <string>
+#include <fstream>
+
+using namespace std;
+
+// global stucture definition
+struct dLLNode
+{
+    int data;
+	dLLNode* prev;
+    dLLNode* next;
+};
+
+struct dLList
+{
+	int length;
+	dLLNode* top;
+};
+
+// function prototypes
+void ProgramInformation();
+void CheckParamFiles(char* f1, char* f2, string &s1, string &s2);
+string EnterInputFile(string ordinal);
+void ProcessFile(string fileName, dLList* evenList, dLList* oddList);
+
+void InitializeList(dLList* list);						// Beginning of DLL Prototypes
+bool EmptyList();
+dLLNode* NumInList(dLList* list, int numToFind);
+bool OrderedListInsertion(dLList* list, int numToInsert);
+int ListLength();
+int PositionInList(dLList* list, int numToFind);
+void DisplayList(dLList* list);				// (done)
+void DestroyList(); 						// End of DLL Prototypes
+
+int main(int argc, char* argv[])
+{
+	char* f1 = argv[1];
+    char* f2 = argv[2];
+    string s1, s2;
+    
+    ProgramInformation();
+    CheckParamFiles(f1, f2, s1, s2);
+    
+    cout << "File Name 1 is: " << s1 << endl;
+    cout << "File Name 2 is: " << s2 << endl;
+    
+    dLList* oddList = new dLList;
+    dLList* evenList = new dLList;
+    
+    InitializeList(oddList);
+    InitializeList(evenList);
+    
+    ProcessFile(s1, evenList, oddList);
+    cout << "Even List:" << endl;
+    DisplayList(evenList);
+    cout << endl << "Odd List:" << endl;
+    DisplayList(oddList);
+}
+
+
+//*********************************************************************
+//  FUNCTION:	    Program Information
+//  DESCRIPTION:    Tells user what program does.
+//  OUTPUT:	
+//       No Output, only information.
+//  CALLS TO:  
+//**********************************************************************
+
+void ProgramInformation()
+{
+	cout << "\nThis program will analyze numbers from two input files "
+	     << "and place them into two doubly linked lists" << endl
+	     << "based on whether the number is odd or even." << endl << endl;
+}
+
+
+//*********************************************************************
+//  FUNCTION:	    CheckParamFiles
+//  DESCRIPTION:    Checks Input Arguments
+//  OUTPUT:	
+//       Pass file name strings back out via reference
+//  CALLS TO:  EnterInputFile
+//**********************************************************************
+
+void CheckParamFiles(char* f1, char* f2, string &s1, string &s2)
+{
+    ifstream checkFile1;
+    ifstream checkFile2;
+    
+    if (f1 == NULL)
+    {
+    	cout << "No Arguments Entered" << endl;
+    	s1 = EnterInputFile("first");
+    	s2 = EnterInputFile("second");
+	}
+	else
+	{
+    	checkFile1.open (f1);
+    
+    	if (!checkFile1)
+    	{
+        	checkFile1.close();
+			s1 = EnterInputFile("first");
+		}
+		
+		checkFile2.open (f2);
+		if (!checkFile2)
+		{
+			checkFile2.close();
+			s2 = EnterInputFile("second");
+		}	
+	}
+	cout << "All input files are valid." << endl << endl;
+}
+
+
+//*********************************************************************
+//  FUNCTION:	    CheckInputFile
+//  DESCRIPTION:    Checks input file and allows user to enter 
+//                  missing arguments - converts to string
+//  OUTPUT:	        Strings to build linked lists
+//  CALLS TO:  
+//**********************************************************************
+
+string EnterInputFile(string ordinal)
+{
+	bool goodFile = false;
+	string fileName;
+	char* cFileName;
+	ifstream checkFile;
+	while(!goodFile)
+	{
+		cout << "Please enter correct name for the " << ordinal << " file: ";
+		cin >> fileName;
+		cFileName = &fileName[0u];
+		checkFile.open(cFileName);
+		if(checkFile)
+		{
+			goodFile = true;
+		}
+		else
+		{
+			cout << "Filename is invalid." << endl;
+			cout << "Please check file name and try again." << endl;
+			goodFile = false;
+		}
+		checkFile.close();
+	}
+	return fileName;
+}
+
+
+//*********************************************************************
+//  FUNCTION:	    Process File
+//  DESCRIPTION:    Takes filename and processes numbers in file to  
+//                  odd and even dLLists
+//  OUTPUT:	        Lists by reference
+//  CALLS TO:  		OrderedListInsertion
+//**********************************************************************
+void ProcessFile(string fileName, dLList* evenList, dLList* oddList)
+{
+	ifstream inFile;
+	inFile.open(fileName.c_str());
+	int data;
+	bool goodInsert = true;
+	
+	inFile >> data;
+	while(inFile)
+	{
+		if (data % 2 == 0)
+    	{
+        	goodInsert = OrderedListInsertion(evenList, data);
+			if (!goodInsert)
+			{
+				cout << data << " was not inserted." << endl;	
+			}
+			else
+			{
+				cout << data << " was inserted successfully." << endl;	
+			}
+		}
+    	else
+    	{
+			goodInsert = OrderedListInsertion(oddList, data);
+			if (!goodInsert)
+			{
+				cout << data << " was not inserted." << endl;	
+			}
+			else
+			{
+				cout << data << " was inserted successfully." << endl;	
+			}
+		}
+	inFile >> data;
+	}															// end while
+}
+
+// START OF DOUBLY LINKED LIST FUNCTIONS
+
+//************************************************************************
+//  FUNCTION:	    InitializeList
+//  DESCRIPTION:    Creates Empty List
+//  INPUT:			Doubly Linked List (dLList)
+//  OUTPUT:			
+//  CALLS TO:		n/a
+//*************************************************************************
+void InitializeList(dLList *list)
+{
+	list->top = NULL;
+	list->length = 0;
+}
+
+
+//************************************************************************
+//  FUNCTION:	    EmptyList
+//  DESCRIPTION:    Determines if list is empty
+//  INPUT:			Doubly Linked List (dLList)
+//  OUTPUT:			true if list is empty, otherwise false
+//  CALLS TO:		n/a
+//*************************************************************************
+bool EmptyList(dLList *list)
+{
+	return (list->top == NULL);
+}
+
+
+//************************************************************************
+//  FUNCTION:	    NumInList
+//  DESCRIPTION:    Searches for a number in the ordered list
+//  INPUT:			Doubly Linked List (dLList)
+//  OUTPUT:			Returns Node with matching number or NULL.
+//  CALLS TO:		n/a
+//*************************************************************************
+dLLNode* NumInList(dLList* list, int numToFind)
+{
+	bool numFound = false;
+	dLLNode* currNode = new dLLNode;
+	
+	currNode = list->top;
+	
+	while(currNode != NULL && !numFound)
+	{
+		if (currNode->data == numToFind)
+		{
+			numFound = true;
+		}
+		else
+		{
+			currNode = currNode->next;
+		}
+	}												// end while
+	if (numFound)
+	{
+		numFound = (currNode->data == numToFind);
+		if (numFound)
+		{
+			return currNode;
+		}
+	}
+	else
+	{
+		return NULL;
+	}
+}
+
+
+//************************************************************************
+//  FUNCTION:	    OrderedListInsertion
+//  DESCRIPTION:    Takes dLList and int and inserts new node with int in
+//					ascending order and returns true if successful
+//  INPUT:			Doubly Linked List (dLList) and number to be inserted (int)
+//  OUTPUT:			true if successful, otherwise false
+//  CALLS TO:		n/a
+//*************************************************************************
+bool OrderedListInsertion(dLList* list, int numToInsert)
+{
+	bool successfulInsert;
+	
+	dLLNode* currNode = new dLLNode;
+	dLLNode* prevNode = new dLLNode;
+	dLLNode* newNode = new dLLNode;
+	bool found;
+	
+	newNode->data = numToInsert;
+	newNode->next = NULL;
+	newNode->prev = NULL;
+	
+	if (newNode == NULL)
+	{
+		successfulInsert = false;		// Failed to allocate node successfully.
+	}
+	else
+	{
+		if (list->top == NULL)
+		{
+			list->top = newNode;
+			list->length++;
+			successfulInsert = true;
+		}
+		else
+		{
+			found = false;
+			currNode = list->top;
+			successfulInsert = true;
+			
+			while (currNode != NULL && !found)		// searches for Node with data
+			{										// larger than numToFind for insert
+				if (currNode->data >= numToInsert)	// node
+				{
+					found = true;
+				}
+				else
+				{
+					prevNode = currNode;
+					currNode = currNode->next;
+				}
+			}										// end while
+			
+			if (currNode == list->top)				// insert newNode before first
+			{
+				list->top->prev = newNode;
+				newNode->next = list->top;
+				list->top = newNode;
+				list->length++;
+			}
+			
+			else									// insert newNode b/n prev&currNode
+			{
+				if (currNode != NULL)
+				{
+					prevNode->next = newNode;
+					newNode->prev = prevNode;
+					newNode->next = currNode;
+					currNode->prev = newNode;
+				}
+				else
+				{
+					prevNode->next = newNode;
+					newNode->prev = prevNode;
+				}
+				list->length++;
+			}
+		}
+	}
+	return successfulInsert;
+}
+
+
+//************************************************************************
+//  FUNCTION:	    
+//  DESCRIPTION:    
+//  INPUT:			Doubly Linked List (dLList)
+//  OUTPUT:			
+//  CALLS TO:		n/a
+//*************************************************************************
+int ListLength(dLList *list)
+{
+	return list->length;
+}
+
+
+//************************************************************************
+//  FUNCTION:	    PositionInList
+//  DESCRIPTION:    Takes list and int, if it finds given integer
+//  INPUT:			Doubly Linked List (dLList)
+//  OUTPUT:			int number in list or 0 if number not in list
+//  CALLS TO:		NumInList
+//*************************************************************************
+int PositionInList(dLList *list, int numToFind)
+{
+	int count = 0;
+	dLLNode* currNode = new dLLNode;
+	currNode = NumInList(list, numToFind);
+	
+	if (currNode == NULL)
+	{
+		cout << numToFind << " is not in the list." << endl;
+		count = 0;
+	}
+	else
+	{
+		while (currNode != NULL)
+		{
+			currNode = currNode->prev;
+			count++;
+		}
+	}
+	return count;
+}
+
+//************************************************************************
+//  FUNCTION:	    DisplayList
+//  DESCRIPTION:    Displays values in a doubly linked list
+//  INPUT:			Parameter: top - pointer to filled list
+//  CALLS TO:		n/a
+//*************************************************************************
+void DisplayList(dLList* list)
+{
+    dLLNode *currNode = new dLLNode;
+    currNode = list->top;
+
+    if (currNode == NULL)
+        cout << "List is empty." << endl;
+    else 
+	{
+        while (currNode->next != NULL) 
+		{   
+            cout << " " << setw(4) << currNode->data << endl;
+	    	currNode = currNode->next;
+        }
+    }
+    cout << endl;
+}
+
+//************************************************************************
+//  FUNCTION:	    DestroyList
+//  DESCRIPTION:    Takes doubly linked list and frees the list memory by
+//					de-allocating all nodes
+//  INPUT:			Doubly Linked List (dLList)
+//  CALLS TO:		n/a
+//*************************************************************************
+void DestroyList(dLList* list)
+{
+	dLLNode* temp = new dLLNode;
+	
+	while(list->top != NULL)
+	{
+		temp = list->top;
+		list->top = list->top->next;
+		delete temp;
+	}
+	list->length = 0;
+}
